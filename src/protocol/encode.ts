@@ -35,10 +35,15 @@ function value14(n: number): [number, number] {
   return [(v >> 7) & 0x7f, v & 0x7f];
 }
 
+// Wire value_lo for a specific channel is the 1-based MIDI channel number
+// (1-16) directly -- the firmware itself subtracts 1 when storing it
+// in-RAM (`pcfg->chan = value_lo - 1`). See firmware/cv.c cv_nrpn() /
+// firmware/gate.c gate_nrpn() NRPNL_CHAN handling, confirmed against
+// cvocd_default.syx record `01 02 00 01` (global channel = 1).
 function channelRecord(obj: number, param: number, chan: MidiChannelSel): Record4 {
   if (chan.mode === "omni") return [obj, param, CHAN_SPECIAL.OMNI, 0];
   if (chan.mode === "global") return [obj, param, CHAN_SPECIAL.GLOBAL, 0];
-  return [obj, param, CHAN_SPECIAL.SPECIFIC, Math.max(0, Math.min(15, chan.channel - 1))];
+  return [obj, param, CHAN_SPECIAL.SPECIFIC, Math.max(1, Math.min(16, chan.channel))];
 }
 
 const PRIORITY_TO_WIRE: Record<NotePriority, number> = {
@@ -65,8 +70,11 @@ const STACK_SRC_HI = [SRC_HI.STACK_1, SRC_HI.STACK_2, SRC_HI.STACK_3, SRC_HI.STA
 
 function encodeGlobals(patch: MutantBrainPatch, out: Record4[]) {
   const g = patch.globals;
-  out.push([OBJECT.GLOBAL, PARAM.CHAN, CHAN_SPECIAL.SPECIFIC, Math.max(0, Math.min(15, g.midiChannel - 1))]);
-  out.push([OBJECT.GLOBAL, PARAM.GATE_DUR, ...value14(g.defaultTriggerDurationMs)] as Record4);
+  out.push([OBJECT.GLOBAL, PARAM.CHAN, CHAN_SPECIAL.SPECIFIC, Math.max(1, Math.min(16, g.midiChannel))]);
+  // global_nrpn() only applies NRPNL_GATE_DUR when value_hi === NRPVH_DUR_MS;
+  // any other value_hi is silently ignored. value_lo is the plain ms value
+  // (0-127), not a 14-bit split.
+  out.push([OBJECT.GLOBAL, PARAM.GATE_DUR, DUR_MODE.MILLISECONDS, Math.max(0, Math.min(127, Math.round(g.defaultTriggerDurationMs)))]);
 }
 
 function encodeNoteInput(obj: number, ni: NoteInputSettings, out: Record4[]) {
@@ -77,7 +85,8 @@ function encodeNoteInput(obj: number, ni: NoteInputSettings, out: Record4[]) {
   out.push([obj, PARAM.NOTE_MAX, ...value14(ni.noteMax)] as Record4);
   out.push([obj, PARAM.VEL_MIN, ...value14(ni.minVelocity)] as Record4);
   out.push([obj, PARAM.PB_RANGE, ...value14(ni.pitchBendRangeSemitones)] as Record4);
-  out.push([obj, PARAM.PRIORITY, PRIORITY_TO_WIRE[ni.priority], 0]);
+  // stack_nrpn() reads NRPNL_PRIORITY from value_lo, not value_hi.
+  out.push([obj, PARAM.PRIORITY, 0, PRIORITY_TO_WIRE[ni.priority]]);
 }
 
 function encodeCvOutput(obj: number, cv: CvOutputSettings, out: Record4[]) {
@@ -87,10 +96,22 @@ function encodeCvOutput(obj: number, cv: CvOutputSettings, out: Record4[]) {
       out.push([obj, PARAM.SRC, SRC_HI.DISABLE, 0]);
       break;
     case "pitch":
-      out.push([obj, PARAM.SRC, STACK_SRC_HI[s.noteInput - 1], SRC_LO_STACK.ANY_NOTES]);
+      // cv_nrpn()'s SRC handler only recognises value_lo === NOTE1..NOTE4
+      // (NRPVL_SRC_NOTE1..4) for pitch mode -- ANY_NOTES(5) matches no
+      // case in that inner switch, so the record is silently dropped and
+      // the CV output is left unconfigured on real hardware. This app
+      // models one output slot per note input (mono voice), so that's
+      // always NOTE1. Confirmed against the real Mutant Brain fixture
+      // `mutant_brain_live.syx`, where every pitch CV uses value_lo=1.
+      out.push([obj, PARAM.SRC, STACK_SRC_HI[s.noteInput - 1], SRC_LO_STACK.NOTE_1]);
       out.push([obj, PARAM.TRANSPOSE, ...value14(s.transposeSemitones + TRANSPOSE_NONE)] as Record4);
-      out.push([obj, PARAM.PITCH_SCHEME, PITCH_SCHEME_TO_WIRE[s.pitchScheme], 0]);
-      out.push([obj, PARAM.VOLTS, ...value14(s.maxVolts)] as Record4);
+      // cv_nrpn() reads NRPNL_PITCH_SCHEME from value_lo, not value_hi.
+      out.push([obj, PARAM.PITCH_SCHEME, 0, PITCH_SCHEME_TO_WIRE[s.pitchScheme]]);
+      // Note: cv_write_note() always uses a hardcoded dacs_per_oct (500),
+      // ignoring event.volts, for CV_NOTE mode -- pitch CVs have no real
+      // "max volts" concept on real firmware, and the reference
+      // configurator doesn't emit a VOLTS record for pitch outputs
+      // either. Omitted here to match; kept purely as a UI-facing default.
       break;
     case "velocity":
       out.push([obj, PARAM.SRC, STACK_SRC_HI[s.noteInput - 1], SRC_LO_STACK.VELOCITY]);
@@ -150,16 +171,34 @@ function encodeGateOutput(obj: number, gate: GateOutputSettings, out: Record4[])
       out.push([obj, PARAM.SRC, SRC_HI.DISABLE, 0]);
       return;
     case "note-gate":
-      out.push([obj, PARAM.SRC, STACK_SRC_HI[s.noteInput - 1], SRC_LO_STACK.ANY_NOTES]);
+      // gate_nrpn()'s SRC handler maps value_lo === NOTE1..NOTE4 to
+      // GATE_NOTE_GATEA..D ("output slot N is currently sounding"), which
+      // is what "gate follows note-input N held state" means here.
+      // ANY_NOTES(5) is a *different* mode (GATE_NOTE_ON, "some note is
+      // held on this stack") -- not a no-op like the CV case, but the
+      // wrong behavior. This app models one output slot per note input,
+      // so that's always NOTE1. Confirmed against the real Mutant Brain
+      // fixture, where every voice gate uses value_lo=1.
+      out.push([obj, PARAM.SRC, STACK_SRC_HI[s.noteInput - 1], SRC_LO_STACK.NOTE_1]);
       break;
     case "midi-note":
       out.push([obj, PARAM.SRC, SRC_HI.MIDI_NOTE, s.note]);
       out.push(channelRecord(obj, PARAM.CHAN, s.channel));
+      // gate_nrpn(): NOTE_MAX (range top) and VEL_MIN (velocity gate)
+      // are separate fields on T_GATE_MIDI_NOTE, both real and commonly
+      // used on real hardware (e.g. an "any note, any velocity" catch-all
+      // trigger with note=0/noteMax=127/minVelocity=0 or 1).
+      if (s.noteMax) out.push([obj, PARAM.NOTE_MAX, 0, s.noteMax & 0x7f]);
+      if (s.minVelocity) out.push([obj, PARAM.VEL_MIN, 0, s.minVelocity & 0x7f]);
       break;
-    case "clock":
-      out.push([obj, PARAM.SRC, SRC_HI.MIDI_TICK_RUN, 0]);
-      out.push([obj, PARAM.TICK_OFS, ...value14(divisionTicks(s.division))] as Record4);
+    case "clock": {
+      // gate_nrpn(): clock division lives in the SRC record's own value_lo
+      // (falls back to DEFAULT_GATE_DIV=6 on-device if 0). TICK_OFS (param
+      // 0x0b) is a separate "initial tick count" field, not the division.
+      const srcHi = s.onlyWhileRunning === false ? SRC_HI.MIDI_TICK : SRC_HI.MIDI_TICK_RUN;
+      out.push([obj, PARAM.SRC, srcHi, divisionTicks(s.division) & 0x7f]);
       break;
+    }
     case "transport-start":
       out.push([obj, PARAM.SRC, SRC_HI.MIDI_START, 0]);
       break;

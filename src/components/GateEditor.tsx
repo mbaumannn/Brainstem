@@ -100,13 +100,39 @@ export function GateEditor({
           <>
             <ChannelSelect value={s.channel} onChange={(channel) => onChange({ source: { ...s, channel }, duration: gate.duration })} />
             <div className="field">
-              <label>Note</label>
+              <label>Note{s.noteMax ? " (low)" : ""}</label>
               <input
                 type="number"
                 min={0}
                 max={127}
                 value={s.note}
                 onChange={(e) => onChange({ source: { ...s, note: +e.target.value }, duration: gate.duration })}
+              />
+            </div>
+            <div className="field">
+              <label>Note range top (0 = single note)</label>
+              <input
+                type="number"
+                min={0}
+                max={127}
+                value={s.noteMax ?? 0}
+                onChange={(e) => {
+                  const noteMax = +e.target.value;
+                  onChange({ source: { ...s, noteMax: noteMax || undefined }, duration: gate.duration });
+                }}
+              />
+            </div>
+            <div className="field">
+              <label>Min velocity</label>
+              <input
+                type="number"
+                min={0}
+                max={127}
+                value={s.minVelocity ?? 0}
+                onChange={(e) => {
+                  const minVelocity = +e.target.value;
+                  onChange({ source: { ...s, minVelocity: minVelocity || undefined }, duration: gate.duration });
+                }}
               />
             </div>
           </>

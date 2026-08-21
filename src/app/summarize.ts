@@ -40,8 +40,11 @@ export function summarizeGate(g: GateOutputSettings): string {
       return "Not in use.";
     case "note-gate":
       return `High while note input ${s.noteInput} is held.`;
-    case "midi-note":
-      return `Note ${s.note} on ${chanLabel(s.channel)}${durSuffix}.`;
+    case "midi-note": {
+      const velSuffix = s.minVelocity ? `, velocity >= ${s.minVelocity}` : "";
+      const noteLabel = s.noteMax ? `notes ${s.note}-${s.noteMax}` : `note ${s.note}`;
+      return `${noteLabel} on ${chanLabel(s.channel)}${velSuffix}${durSuffix}.`;
+    }
     case "clock":
       return `Pulse on every ${s.division === "24ppqn" ? "24 PPQN clock tick" : s.division + " clock division"}${durSuffix}.`;
     case "transport-start":
@@ -89,7 +92,7 @@ export function shortGateDetail(g: GateOutputSettings): string {
     case "note-gate":
       return `Voice ${s.noteInput}`;
     case "midi-note":
-      return `${chanLabel(s.channel)} · note ${s.note}`;
+      return `${chanLabel(s.channel)} · ${s.noteMax ? `${s.note}-${s.noteMax}` : `note ${s.note}`}`;
     case "clock":
       return s.division;
     case "transport-start":

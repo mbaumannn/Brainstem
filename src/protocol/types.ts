@@ -69,8 +69,24 @@ export type GateDuration =
 export type GateSource =
   | { type: "disabled" }
   | { type: "note-gate"; noteInput: number } // gate follows note-input N held state
-  | { type: "midi-note"; channel: MidiChannelSel; note: number }
-  | { type: "clock"; division: ClockDivision }
+  | {
+      type: "midi-note";
+      channel: MidiChannelSel;
+      note: number; // low end of the note range (single note if noteMax is unset/0)
+      noteMax?: number; // 0 or unset = single note; otherwise the top of an inclusive range
+      minVelocity?: number; // 0-127, note-on velocity must be >= this to trigger
+    }
+  | {
+      type: "clock";
+      division: ClockDivision;
+      // Firmware distinguishes GATE_MIDI_CLOCK_TICK (fires on every MIDI
+      // clock tick, transport running or not) from
+      // GATE_MIDI_CLOCK_RUN_TICK (only while transport is running).
+      // Undefined/true = run-gated (this app's long-standing default);
+      // false = always-ticking, matching real captured patches that use
+      // it for a free-running clock output.
+      onlyWhileRunning?: boolean;
+    }
   | { type: "transport-start" }
   | { type: "transport-stop" }
   | { type: "transport-run" }

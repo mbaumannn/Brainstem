@@ -10,6 +10,7 @@ import {
   PRIORITY,
   RECORD_LENGTH,
   SRC_HI,
+  SRC_LO_STACK,
   SYSEX_END,
   SYSEX_HEADER,
   SYSEX_START,
@@ -35,10 +36,12 @@ function parseValue14(hi: number, lo: number): number {
   return ((hi & 0x7f) << 7) | (lo & 0x7f);
 }
 
+// value_lo for a specific channel is the 1-based MIDI channel (1-16)
+// directly -- see the matching note in encode.ts's channelRecord().
 function parseChannel(hi: number, lo: number): MidiChannelSel {
   if (hi === CHAN_SPECIAL.OMNI) return { mode: "omni" };
   if (hi === CHAN_SPECIAL.GLOBAL) return { mode: "global" };
-  return { mode: "specific", channel: (lo & 0x0f) + 1 };
+  return { mode: "specific", channel: lo || 1 };
 }
 
 const WIRE_TO_PRIORITY: Record<number, NotePriority> = {
@@ -60,6 +63,17 @@ const WIRE_TO_PITCH_SCHEME: Record<number, PitchScheme> = {
   [PITCH_SCHEME.HZ_V]: "hz-v",
   [PITCH_SCHEME.V12_OCT]: "12v-oct",
 };
+
+// cv_nrpn()/gate_nrpn() only recognise value_lo === NOTE1..NOTE4 as "the
+// stack's (single, mono) note output" -- ANY_NOTES/NO_NOTES/VELOCITY are
+// distinct, unmodeled firmware modes and must not be folded into
+// "pitch"/"note-gate" on decode (see the matching note in encode.ts).
+const STACK_NOTE_SLOT_LO = new Set<number>([
+  SRC_LO_STACK.NOTE_1,
+  SRC_LO_STACK.NOTE_2,
+  SRC_LO_STACK.NOTE_3,
+  SRC_LO_STACK.NOTE_4,
+]);
 
 const STACK_SRC_HI_TO_INDEX: Record<number, number> = {
   [SRC_HI.STACK_1]: 1,
@@ -128,8 +142,10 @@ function decodeGlobals(entry: ObjectRecords | undefined, unknown: Record4[]) {
     }
   });
   return {
-    midiChannel: chan ? (chan[1] & 0x0f) + 1 : base.midiChannel,
-    defaultTriggerDurationMs: dur ? parseValue14(dur[0], dur[1]) : base.defaultTriggerDurationMs,
+    midiChannel: chan ? chan[1] || 1 : base.midiChannel,
+    // global_nrpn() only stores NRPNL_GATE_DUR when value_hi === DUR_MS;
+    // value_lo is the plain ms value, not a 14-bit split.
+    defaultTriggerDurationMs: dur && dur[0] === DUR_MODE.MILLISECONDS ? dur[1] : base.defaultTriggerDurationMs,
   };
 }
 
@@ -158,7 +174,8 @@ function decodeNoteInput(entry: ObjectRecords | undefined, unknown: Record4[]): 
   return {
     enabled: src ? src[0] === 1 : base.enabled,
     channel: chan ? parseChannel(chan[0], chan[1]) : base.channel,
-    priority: priority ? WIRE_TO_PRIORITY[priority[0]] ?? base.priority : base.priority,
+    // stack_nrpn() reads NRPNL_PRIORITY from value_lo, not value_hi.
+    priority: priority ? WIRE_TO_PRIORITY[priority[1]] ?? base.priority : base.priority,
     noteMin: noteMin ? parseValue14(noteMin[0], noteMin[1]) : base.noteMin,
     noteMax: noteMax ? parseValue14(noteMax[0], noteMax[1]) : base.noteMax,
     minVelocity: velMin ? parseValue14(velMin[0], velMin[1]) : base.minVelocity,
@@ -183,18 +200,27 @@ function decodeCvOutput(entry: ObjectRecords | undefined, unknown: Record4[]): {
 
   const stackIndex = STACK_SRC_HI_TO_INDEX[src[0]];
   if (stackIndex) {
-    if (src[1] === 20 /* SRC_LO_STACK.VELOCITY */) {
+    if (src[1] === SRC_LO_STACK.VELOCITY) {
       return { source: { type: "velocity", noteInput: stackIndex, maxVolts } };
     }
-    return {
-      source: {
-        type: "pitch",
-        noteInput: stackIndex,
-        transposeSemitones: transpose ? parseValue14(transpose[0], transpose[1]) - TRANSPOSE_NONE : 0,
-        pitchScheme: pitchScheme ? WIRE_TO_PITCH_SCHEME[pitchScheme[0]] ?? "v-oct" : "v-oct",
-        maxVolts,
-      },
-    };
+    if (STACK_NOTE_SLOT_LO.has(src[1])) {
+      return {
+        source: {
+          type: "pitch",
+          noteInput: stackIndex,
+          transposeSemitones: transpose ? parseValue14(transpose[0], transpose[1]) - TRANSPOSE_NONE : 0,
+          // cv_nrpn() reads NRPNL_PITCH_SCHEME from value_lo, not value_hi.
+          pitchScheme: pitchScheme ? WIRE_TO_PITCH_SCHEME[pitchScheme[1]] ?? "v-oct" : "v-oct",
+          maxVolts,
+        },
+      };
+    }
+    // value_lo is a stack SRC value this app doesn't model (e.g.
+    // ANY_NOTES/NO_NOTES) -- cv_nrpn()'s inner switch has no case for it,
+    // so on real hardware it's a no-op; preserve the record rather than
+    // guessing a source type for it.
+    unknown.push([entry.object, PARAM.SRC, src[0], src[1]]);
+    return { source: { type: "disabled" } };
   }
   if (src[0] === SRC_HI.MIDI_CC) {
     return {
@@ -230,15 +256,27 @@ function decodeCvOutput(entry: ObjectRecords | undefined, unknown: Record4[]): {
 function decodeGateOutput(entry: ObjectRecords | undefined, unknown: Record4[]): GateOutputSettings {
   const disabled: GateOutputSettings = { source: { type: "disabled" }, duration: { mode: "gate" } };
   if (!entry) return disabled;
-  const known = new Set<number>([PARAM.SRC, PARAM.CHAN, PARAM.TICK_OFS, PARAM.GATE_DUR, PARAM.THRESHOLD]);
+  const known = new Set<number>([
+    PARAM.SRC,
+    PARAM.CHAN,
+    PARAM.TICK_OFS,
+    PARAM.GATE_DUR,
+    PARAM.THRESHOLD,
+    PARAM.NOTE_MAX,
+    PARAM.VEL_MIN,
+  ]);
   entry.params.forEach((v, param) => {
     if (!known.has(param)) unknown.push([entry.object, param, v[0], v[1]]);
   });
   const src = entry.params.get(PARAM.SRC);
   const chan = entry.params.get(PARAM.CHAN);
-  const tickOfs = entry.params.get(PARAM.TICK_OFS);
+  // TICK_OFS (initial clock tick count) isn't modeled as a UI-facing field
+  // yet; it's declared "known" above so it round-trips silently rather than
+  // being flagged as an unknown record.
   const gateDur = entry.params.get(PARAM.GATE_DUR);
   const threshold = entry.params.get(PARAM.THRESHOLD);
+  const noteMax = entry.params.get(PARAM.NOTE_MAX);
+  const velMin = entry.params.get(PARAM.VEL_MIN);
 
   const duration: GateOutputSettings["duration"] = (() => {
     if (!gateDur) return { mode: "gate" };
@@ -260,12 +298,33 @@ function decodeGateOutput(entry: ObjectRecords | undefined, unknown: Record4[]):
   const stackIndex = STACK_SRC_HI_TO_INDEX[src[0]];
   const defaultChan: MidiChannelSel = { mode: "specific", channel: 1 };
   if (stackIndex) {
+    if (!STACK_NOTE_SLOT_LO.has(src[1])) {
+      // gate_nrpn() maps value_lo === NOTE1..4 to GATE_NOTE_GATEA..D
+      // ("note-gate" here); ANY_NOTES/NO_NOTES select different real
+      // modes (GATE_NOTE_ON / GATE_NOTES_OFF) that aren't modeled in the
+      // UI yet -- preserve rather than mislabel.
+      unknown.push([entry.object, PARAM.SRC, src[0], src[1]]);
+      return disabled;
+    }
     source = { type: "note-gate", noteInput: stackIndex };
   } else if (src[0] === SRC_HI.MIDI_NOTE) {
-    source = { type: "midi-note", channel: chan ? parseChannel(chan[0], chan[1]) : defaultChan, note: src[1] };
+    source = {
+      type: "midi-note",
+      channel: chan ? parseChannel(chan[0], chan[1]) : defaultChan,
+      note: src[1],
+      ...(noteMax ? { noteMax: noteMax[1] } : {}),
+      ...(velMin ? { minVelocity: velMin[1] } : {}),
+    };
   } else if (src[0] === SRC_HI.MIDI_TICK_RUN || src[0] === SRC_HI.MIDI_TICK) {
-    const ticks = tickOfs ? parseValue14(tickOfs[0], tickOfs[1]) : 6;
-    source = { type: "clock", division: TICKS_TO_DIVISION[ticks] ?? "1/16" };
+    // gate_nrpn(): the clock division lives in the SRC record's own
+    // value_lo (0 falls back to DEFAULT_GATE_DIV=6 on-device). tickOfs is
+    // a separate, unrelated "initial tick count" field.
+    const ticks = src[1] || 6;
+    source = {
+      type: "clock",
+      division: TICKS_TO_DIVISION[ticks] ?? "1/16",
+      onlyWhileRunning: src[0] === SRC_HI.MIDI_TICK_RUN,
+    };
   } else if (src[0] === SRC_HI.MIDI_START) {
     source = { type: "transport-start" };
   } else if (src[0] === SRC_HI.MIDI_STOP) {
