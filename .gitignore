@@ -1,4 +1,22 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
+
+# Playwright test artifacts
 .shots
+playwright-report
+test-results
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
 *.local
+
+# Vite
+.vite
+
+# Env
+.env
+.env.local
