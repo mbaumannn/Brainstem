@@ -14,6 +14,8 @@ import { GateEditor } from "./components/GateEditor";
 import { AdvancedPanel } from "./components/AdvancedPanel";
 import { ProfileBar } from "./components/ProfileBar";
 import { MidiBar } from "./components/MidiBar";
+import { ChannelRing } from "./components/ChannelRing";
+import { ZigzagMark } from "./components/ZigzagMark";
 
 export default function App() {
   const [patch, setPatch] = useState<MutantBrainPatch>(() => BUILTIN_PROFILES[1].build());
@@ -117,13 +119,13 @@ export default function App() {
       <header className="app-header">
         <div className="wordmark">
           <h1>
-            <span className="dot" />
-            Brainstem
+            <ChannelRing tone="var(--accent)" active size={22} />
+            <span>Brainstem</span>
           </h1>
-          <span className="subtitle">Configure · save · send</span>
+          <span className="wordmark-tagline">a Mutant Brain utility</span>
         </div>
         <div className="header-actions">
-          <button className="btn btn-ghost" onClick={() => fileInputRef.current?.click()}>
+          <button className="btn" onClick={() => fileInputRef.current?.click()}>
             Import
           </button>
           <input
@@ -137,13 +139,13 @@ export default function App() {
               e.target.value = "";
             }}
           />
-          <button className="btn btn-ghost" onClick={() => downloadSysex(patch)}>
+          <button className="btn" onClick={() => downloadSysex(patch)}>
             Export .syx
           </button>
-          <button className="btn btn-ghost" onClick={() => downloadProfileJson(patch)}>
+          <button className="btn" onClick={() => downloadProfileJson(patch)}>
             Export JSON
           </button>
-          <button className={`btn ${advancedOpen ? "btn-primary" : "btn-ghost"}`} onClick={() => setAdvancedOpen((v) => !v)}>
+          <button className={`btn ${advancedOpen ? "btn-primary" : ""}`} onClick={() => setAdvancedOpen((v) => !v)}>
             Advanced
           </button>
         </div>
@@ -203,6 +205,7 @@ export default function App() {
 
       {advancedOpen && <AdvancedPanel patch={patch} onChange={setPatch} />}
 
+      <ZigzagMark />
       <MidiBar getSysexBytes={() => sysexBytes} />
     </>
   );

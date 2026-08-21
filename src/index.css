@@ -20,6 +20,12 @@
   --ch-d: #f2839f; /* pink    — CV/Voice D */
   --ch-neutral: #8f879a;
 
+  --ch-a-dim: #7a5638;
+  --ch-b-dim: #4a6b58;
+  --ch-c-dim: #3d5a72;
+  --ch-d-dim: #6f4a56;
+  --ch-neutral-dim: #4a4250;
+
   /* Single primary-action accent (also channel A's color: "signal live") */
   --accent: #ff9d52;
   --accent-strong: #ffb377;
@@ -78,7 +84,7 @@ body::before {
 #root {
   position: relative;
   z-index: 1;
-  max-width: 1180px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 28px 24px 120px;
 }
@@ -145,32 +151,24 @@ input[type="number"] {
 .wordmark {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .wordmark h1 {
-  font-size: 30px;
+  font-size: 34px;
+  font-weight: 600;
   letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.wordmark .dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px 2px var(--accent-glow);
-  display: inline-block;
-}
-
-.wordmark .subtitle {
-  font-family: var(--font-mono);
-  font-size: 12px;
+.wordmark-tagline {
+  font-family: "Space Mono", var(--font-mono);
+  font-style: italic;
+  font-size: 14px;
   color: var(--text-dim);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .header-actions {
@@ -233,17 +231,61 @@ input[type="number"] {
   cursor: not-allowed;
 }
 
+/* ---------- Channel ring ---------- */
+
+.channel-ring {
+  --_size: var(--ring-size, 22px);
+  width: var(--_size);
+  height: var(--_size);
+  border-radius: 50%;
+  border: 1.5px solid var(--ring-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--ring-color);
+  color: var(--ink-950);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.channel-ring.is-muted {
+  background: transparent;
+  border-color: var(--ring-dim-color, var(--ch-neutral-dim));
+  color: var(--text-dim);
+}
+
+.channel-ring.is-muted:hover {
+  border-color: color-mix(in srgb, var(--ring-color) 60%, transparent);
+  color: var(--text-soft);
+}
+
+.channel-ring.is-selected {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring-color) 30%, transparent);
+}
+
+.cv-card-head .channel-ring {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.gate-cell-main .channel-ring {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 /* ---------- Profile bar ---------- */
 
 .profile-bar {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 18px;
-  background: var(--ink-900);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  margin-bottom: 32px;
+  gap: 10px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 28px;
 }
 
 .profile-header {
@@ -255,7 +297,7 @@ input[type="number"] {
 
 .profile-name {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text);
@@ -316,6 +358,7 @@ input[type="number"] {
   color: var(--text-soft);
   background: var(--ink-850);
   border: 1px solid var(--line);
+  border-color: var(--line);
   border-radius: var(--radius-sm);
   padding: 3px 8px;
   white-space: nowrap;
@@ -365,14 +408,8 @@ input[type="number"] {
   margin-bottom: 14px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-}
-
-.rack-title::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line-soft);
 }
 
 /* CV cards */
@@ -380,7 +417,19 @@ input[type="number"] {
 .cv-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px 44px;
+  position: relative;
+}
+
+.cv-grid::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: linear-gradient(to bottom, transparent 0%, var(--line-soft) 8%, var(--line-soft) 92%, transparent 100%);
 }
 
 .cv-card {
@@ -426,16 +475,6 @@ input[type="number"] {
   box-shadow: 0 0 0 1px var(--card-color, var(--accent)) inset;
 }
 
-.cv-card .cv-letter {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--card-color, var(--text));
-}
-
-.cv-card.is-idle .cv-letter {
-  color: var(--text-dim);
-}
-
 .cv-card .cv-summary {
   font-size: 12.5px;
   color: var(--text-soft);
@@ -446,22 +485,12 @@ input[type="number"] {
   color: var(--text-dim);
 }
 
-.cv-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--card-color, var(--text-dim));
-  opacity: var(--dot-opacity, 0.25);
-  box-shadow: 0 0 8px 1px var(--card-color, transparent);
-  flex-shrink: 0;
-}
-
 /* Gate grid — mirrors the panel's 6-row × 2-col zigzag (1,2 / 3,4 / ... / 11,12) */
 
 .gate-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px 22px;
+  gap: 10px 44px;
   position: relative;
 }
 
@@ -469,10 +498,10 @@ input[type="number"] {
   content: "";
   position: absolute;
   left: 50%;
-  top: 4px;
-  bottom: 4px;
+  top: 0;
+  bottom: 0;
   width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--line-soft) 12%, var(--line-soft) 88%, transparent);
+  background: linear-gradient(to bottom, transparent 0%, var(--line-soft) 8%, var(--line-soft) 92%, transparent 100%);
   transform: translateX(-0.5px);
 }
 
@@ -508,19 +537,6 @@ input[type="number"] {
   min-width: 0;
 }
 
-.gate-cell .gate-num {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--card-color, var(--text-dim));
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-
-.gate-cell.is-idle .gate-num {
-  color: var(--text-dim);
-  opacity: 0.6;
-}
-
 .gate-text {
   display: flex;
   flex-direction: column;
@@ -550,29 +566,7 @@ input[type="number"] {
   text-overflow: ellipsis;
 }
 
-.gate-dots {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.gate-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.gate-dot.is-lit {
-  background: var(--card-color, var(--accent));
-  border-color: var(--card-color, var(--accent));
-  box-shadow: 0 0 6px 0.5px color-mix(in srgb, var(--card-color, var(--accent)) 60%, transparent);
-}
-
-/* Right column mirrors the panel's left/right jack symmetry: number + dots trade sides */
+/* Right column mirrors the panel's left/right jack symmetry: number + text trade sides */
 .gate-cell-right {
   flex-direction: row-reverse;
   text-align: right;
@@ -586,14 +580,25 @@ input[type="number"] {
   align-items: flex-end;
 }
 
-@media (max-width: 460px) {
+@media (max-width: 560px) {
+  .cv-grid,
   .gate-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 
+  .cv-grid::before,
   .gate-grid::before {
     display: none;
+  }
+
+  .cv-card-right {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .cv-card-right .cv-card-head {
+    flex-direction: row;
   }
 
   .gate-cell-right {
@@ -607,6 +612,14 @@ input[type="number"] {
 
   .gate-cell-right .gate-text {
     align-items: flex-start;
+  }
+
+  .midi-bar select {
+    min-width: 180px;
+  }
+
+  .midi-note {
+    display: none;
   }
 }
 
@@ -746,7 +759,7 @@ input[type="number"] {
 }
 
 .midi-bar-inner {
-  max-width: 1180px;
+  max-width: 760px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -759,6 +772,12 @@ input[type="number"] {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.profile-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-soft);
 }
 
 .midi-bar select {
@@ -844,4 +863,11 @@ input[type="number"] {
   font-size: 12px;
   color: var(--text-dim);
   font-family: var(--font-mono);
+}
+
+.zigzag-mark {
+  display: block;
+  margin: 28px auto 0;
+  color: var(--line-strong);
+  opacity: 0.6;
 }

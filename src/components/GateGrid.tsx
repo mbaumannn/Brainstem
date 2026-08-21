@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { MutantBrainPatch } from "../protocol/types";
 import { shortGateDetail, shortGateLabel } from "../app/summarize";
 import { channelColor } from "../app/colors";
+import { ChannelRing } from "./ChannelRing";
 
 export function GateGrid({
   patch,
@@ -29,16 +30,14 @@ export function GateGrid({
               onClick={() => onSelect(selected === i ? null : i)}
             >
               <div className="gate-cell-main">
-                <span className="gate-num mono">{String(i + 1).padStart(2, "0")}</span>
+                <ChannelRing tone={color} active={active} selected={selected === i} size={22}>
+                  {String(i + 1).padStart(2, "0")}
+                </ChannelRing>
                 <span className="gate-text">
                   <span className="gate-kind">{shortGateLabel(g)}</span>
                   {active && <span className="gate-detail">{shortGateDetail(g)}</span>}
                 </span>
               </div>
-              <span className="gate-dots" aria-hidden="true">
-                <span className={`gate-dot ${active ? "is-lit" : ""}`} />
-                <span className={`gate-dot ${voiceLinked ? "is-lit" : ""}`} />
-              </span>
             </button>
           );
         })}

@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { MutantBrainPatch } from "../protocol/types";
 import { summarizeCv } from "../app/summarize";
 import { channelColor } from "../app/colors";
+import { ChannelRing } from "./ChannelRing";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -24,13 +25,14 @@ export function CvRack({
           return (
             <button
               key={i}
-              style={{ "--card-color": channelColor(i), "--dot-opacity": active ? 1 : 0.25 } as CSSProperties}
+              style={{ "--card-color": channelColor(i) } as CSSProperties}
               className={`cv-card cv-card-${col} ${selected === i ? "is-selected" : ""} ${active ? "is-active" : "is-idle"}`}
               onClick={() => onSelect(selected === i ? null : i)}
             >
               <span className="cv-card-head">
-                <span className="cv-letter mono">{LETTERS[i]}</span>
-                <span className="cv-dot" aria-hidden="true" />
+                <ChannelRing tone={channelColor(i)} active={active} selected={selected === i} size={40}>
+                  {LETTERS[i]}
+                </ChannelRing>
               </span>
               <span className="cv-summary">{summarizeCv(cv)}</span>
             </button>
