@@ -18,17 +18,27 @@ export function GateGrid({
       <div className="gate-grid">
         {patch.gateOutputs.map((g, i) => {
           const active = g.source.type !== "disabled";
-          const color = g.source.type === "note-gate" ? channelColor(g.source.noteInput - 1) : "var(--ch-neutral)";
+          const voiceLinked = g.source.type === "note-gate";
+          const color = voiceLinked ? channelColor((g.source as { noteInput: number }).noteInput - 1) : "var(--ch-neutral)";
+          const col = i % 2 === 0 ? "left" : "right";
           return (
             <button
               key={i}
               style={{ "--card-color": color } as CSSProperties}
-              className={`gate-cell ${selected === i ? "is-selected" : ""} ${active ? "is-active" : "is-idle"}`}
+              className={`gate-cell gate-cell-${col} ${selected === i ? "is-selected" : ""} ${active ? "is-active" : "is-idle"}`}
               onClick={() => onSelect(selected === i ? null : i)}
             >
-              <span className="gate-num mono">{String(i + 1).padStart(2, "0")}</span>
-              <span className="gate-kind">{shortGateLabel(g)}</span>
-              {active && <span className="gate-detail">{shortGateDetail(g)}</span>}
+              <div className="gate-cell-main">
+                <span className="gate-num mono">{String(i + 1).padStart(2, "0")}</span>
+                <span className="gate-text">
+                  <span className="gate-kind">{shortGateLabel(g)}</span>
+                  {active && <span className="gate-detail">{shortGateDetail(g)}</span>}
+                </span>
+              </div>
+              <span className="gate-dots" aria-hidden="true">
+                <span className={`gate-dot ${active ? "is-lit" : ""}`} />
+                <span className={`gate-dot ${voiceLinked ? "is-lit" : ""}`} />
+              </span>
             </button>
           );
         })}

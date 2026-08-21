@@ -161,7 +161,7 @@ export const BUILTIN_PROFILES: BuiltinProfile[] = [
   {
     id: "drums",
     name: "Drums",
-    description: "12 individually configurable MIDI note triggers.",
+    description: "12 individually configurable MIDI note gates/triggers.",
     build: drums,
   },
   {

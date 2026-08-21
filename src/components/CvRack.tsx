@@ -20,14 +20,18 @@ export function CvRack({
       <div className="cv-grid">
         {patch.cvOutputs.map((cv, i) => {
           const active = cv.source.type !== "disabled";
+          const col = i % 2 === 0 ? "left" : "right";
           return (
             <button
               key={i}
               style={{ "--card-color": channelColor(i), "--dot-opacity": active ? 1 : 0.25 } as CSSProperties}
-              className={`cv-card ${selected === i ? "is-selected" : ""} ${active ? "is-active" : "is-idle"}`}
+              className={`cv-card cv-card-${col} ${selected === i ? "is-selected" : ""} ${active ? "is-active" : "is-idle"}`}
               onClick={() => onSelect(selected === i ? null : i)}
             >
-              <span className="cv-letter mono">{LETTERS[i]}</span>
+              <span className="cv-card-head">
+                <span className="cv-letter mono">{LETTERS[i]}</span>
+                <span className="cv-dot" aria-hidden="true" />
+              </span>
               <span className="cv-summary">{summarizeCv(cv)}</span>
             </button>
           );

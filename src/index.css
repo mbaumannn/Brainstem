@@ -237,9 +237,8 @@ input[type="number"] {
 
 .profile-bar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
-  flex-wrap: wrap;
   padding: 16px 18px;
   background: var(--ink-900);
   border: 1px solid var(--line-soft);
@@ -247,30 +246,108 @@ input[type="number"] {
   margin-bottom: 32px;
 }
 
-.profile-bar .profile-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.profile-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.profile-bar select {
+.profile-name {
   font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 12px;
-  min-width: 200px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.2;
 }
 
-.profile-bar .spacer {
-  flex: 1;
+.profile-name-input {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  background: var(--ink-850);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  margin: -5px -11px;
+  min-width: 240px;
+  outline: none;
+}
+
+.profile-name-input:focus {
+  border-color: var(--accent);
+}
+
+.profile-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-controls select {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+  min-width: 160px;
+  max-width: 100%;
 }
 
 .profile-desc {
   font-size: 12px;
   color: var(--text-dim);
-  flex-basis: 100%;
+  margin: 0;
+}
+
+.profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-soft);
+  background: var(--ink-850);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.profile-status::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-soft);
+}
+
+.profile-revert {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-revert:hover {
+  color: var(--text);
 }
 
 /* ---------- Racks ---------- */
@@ -302,14 +379,8 @@ input[type="number"] {
 
 .cv-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-}
-
-@media (max-width: 720px) {
-  .cv-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 .cv-card {
@@ -325,6 +396,23 @@ input[type="number"] {
   gap: 10px;
   min-height: 92px;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.cv-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Right column mirrors the panel's left/right jack symmetry: letter + dot trade sides */
+.cv-card-right {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.cv-card-right .cv-card-head {
+  flex-direction: row-reverse;
 }
 
 .cv-card:hover {
@@ -358,43 +446,48 @@ input[type="number"] {
   color: var(--text-dim);
 }
 
-.cv-card::before {
-  content: "";
-  position: absolute;
-  top: 14px;
-  right: 14px;
+.cv-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--card-color, var(--text-dim));
   opacity: var(--dot-opacity, 0.25);
   box-shadow: 0 0 8px 1px var(--card-color, transparent);
+  flex-shrink: 0;
 }
 
-/* Gate grid */
+/* Gate grid — mirrors the panel's 6-row × 2-col zigzag (1,2 / 3,4 / ... / 11,12) */
 
 .gate-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 22px;
+  position: relative;
 }
 
-@media (max-width: 720px) {
-  .gate-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.gate-grid::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--line-soft) 12%, var(--line-soft) 88%, transparent);
+  transform: translateX(-0.5px);
 }
 
 .gate-cell {
+  position: relative;
   text-align: left;
   background: var(--ink-900);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  padding: 13px 16px;
   cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
@@ -408,16 +501,39 @@ input[type="number"] {
   background: var(--ink-850);
 }
 
+.gate-cell-main {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
 .gate-cell .gate-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--card-color, var(--text-dim));
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.gate-cell.is-idle .gate-num {
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.gate-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .gate-cell .gate-kind {
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gate-cell.is-idle .gate-kind {
@@ -429,6 +545,69 @@ input[type="number"] {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gate-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.gate-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.gate-dot.is-lit {
+  background: var(--card-color, var(--accent));
+  border-color: var(--card-color, var(--accent));
+  box-shadow: 0 0 6px 0.5px color-mix(in srgb, var(--card-color, var(--accent)) 60%, transparent);
+}
+
+/* Right column mirrors the panel's left/right jack symmetry: number + dots trade sides */
+.gate-cell-right {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.gate-cell-right .gate-cell-main {
+  flex-direction: row-reverse;
+}
+
+.gate-cell-right .gate-text {
+  align-items: flex-end;
+}
+
+@media (max-width: 460px) {
+  .gate-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .gate-grid::before {
+    display: none;
+  }
+
+  .gate-cell-right {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .gate-cell-right .gate-cell-main {
+    flex-direction: row;
+  }
+
+  .gate-cell-right .gate-text {
+    align-items: flex-start;
+  }
 }
 
 /* ---------- Contextual editor drawer ---------- */
@@ -439,6 +618,7 @@ input[type="number"] {
   border-radius: var(--radius);
   padding: 20px;
   margin-top: 14px;
+  margin-bottom: 28px;
   animation: drawer-in 0.15s ease;
 }
 

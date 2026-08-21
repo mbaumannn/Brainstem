@@ -62,6 +62,12 @@ export function summarizeGate(g: GateOutputSettings): string {
   }
 }
 
+function durationLabel(mode: GateOutputSettings["duration"]["mode"]): string {
+  if (mode === "retrigger") return "Retrigger";
+  if (mode === "global") return "Global";
+  return mode.charAt(0).toUpperCase() + mode.slice(1); // "Gate" | "Trigger"
+}
+
 export function shortGateLabel(g: GateOutputSettings): string {
   const s = g.source;
   switch (s.type) {
@@ -70,17 +76,18 @@ export function shortGateLabel(g: GateOutputSettings): string {
     case "note-gate":
       return "Voice gate";
     case "midi-note":
-      return "Trigger";
     case "clock":
-      return "Clock";
+    case "cc-above":
+    case "cc-below":
+      // These sources support a configurable duration (gate/trigger/retrigger/global),
+      // so the cell label should match the selected behavior rather than hardcoding
+      // a source-type name such as "Trigger" or "CC gate".
+      return durationLabel(g.duration.mode);
     case "transport-start":
     case "transport-stop":
     case "transport-run":
     case "transport-start-stop":
       return "Transport";
-    case "cc-above":
-    case "cc-below":
-      return "CC gate";
   }
 }
 

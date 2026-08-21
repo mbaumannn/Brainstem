@@ -6,6 +6,7 @@ import type { MutantBrainPatch } from "./protocol/types";
 import { encodeSysex } from "./protocol/encode";
 import { describeError } from "./protocol/validation";
 import { downloadProfileJson, downloadSysex, readPatchFromFile } from "./app/files";
+import { clonePatch, patchesEqual } from "./app/patch";
 import { CvRack } from "./components/CvRack";
 import { CvEditor } from "./components/CvEditor";
 import { GateGrid } from "./components/GateGrid";
@@ -14,15 +15,15 @@ import { AdvancedPanel } from "./components/AdvancedPanel";
 import { ProfileBar } from "./components/ProfileBar";
 import { MidiBar } from "./components/MidiBar";
 
-function clonePatch(p: MutantBrainPatch): MutantBrainPatch {
-  return JSON.parse(JSON.stringify(p));
-}
-
 export default function App() {
   const [patch, setPatch] = useState<MutantBrainPatch>(() => BUILTIN_PROFILES[1].build());
+  const [loadedPatchSnapshot, setLoadedPatchSnapshot] = useState<MutantBrainPatch>(() => clonePatch(BUILTIN_PROFILES[1].build()));
   const [activeBuiltinId, setActiveBuiltinId] = useState<string | null>("4-mono-voices");
   const [activeStoredId, setActiveStoredId] = useState<string | null>(null);
   const [storedProfiles, setStoredProfiles] = useState(() => listStoredProfiles());
+
+  const isModified = !patchesEqual(patch, loadedPatchSnapshot);
+  const saveMode: "new" | "update" = activeStoredId ? "update" : "new";
 
   const [selectedCv, setSelectedCv] = useState<number | null>(null);
   const [selectedGate, setSelectedGate] = useState<number | null>(null);
@@ -42,7 +43,9 @@ export default function App() {
   function loadBuiltin(id: string) {
     const b = BUILTIN_PROFILES.find((p) => p.id === id);
     if (!b) return;
-    setPatch(b.build());
+    const loaded = b.build();
+    setPatch(loaded);
+    setLoadedPatchSnapshot(clonePatch(loaded));
     setActiveBuiltinId(id);
     setActiveStoredId(null);
     setSelectedCv(null);
@@ -52,7 +55,9 @@ export default function App() {
   function loadStored(id: string) {
     const s = storedProfiles.find((p) => p.id === id);
     if (!s) return;
-    setPatch(clonePatch(s.patch));
+    const loaded = clonePatch(s.patch);
+    setPatch(loaded);
+    setLoadedPatchSnapshot(loaded);
     setActiveBuiltinId(null);
     setActiveStoredId(id);
     setSelectedCv(null);
@@ -63,6 +68,7 @@ export default function App() {
     const id = activeStoredId ?? newProfileId();
     saveStoredProfile(id, patch);
     setStoredProfiles(listStoredProfiles());
+    setLoadedPatchSnapshot(clonePatch(patch));
     setActiveStoredId(id);
     setActiveBuiltinId(null);
   }
@@ -71,6 +77,7 @@ export default function App() {
     const p = BUILTIN_PROFILES[0].build();
     p.name = "New profile";
     setPatch(p);
+    setLoadedPatchSnapshot(clonePatch(p));
     setActiveBuiltinId(null);
     setActiveStoredId(null);
   }
@@ -79,6 +86,7 @@ export default function App() {
     const p = clonePatch(patch);
     p.name = `${p.name} copy`;
     setPatch(p);
+    setLoadedPatchSnapshot(clonePatch(p));
     setActiveBuiltinId(null);
     setActiveStoredId(null);
   }
@@ -87,10 +95,15 @@ export default function App() {
     setPatch({ ...patch, name });
   }
 
+  function handleRevert() {
+    setPatch(clonePatch(loadedPatchSnapshot));
+  }
+
   async function handleImport(file: File) {
     try {
       const imported = await readPatchFromFile(file);
       setPatch(imported);
+      setLoadedPatchSnapshot(clonePatch(imported));
       setActiveBuiltinId(null);
       setActiveStoredId(null);
       setError(null);
@@ -149,12 +162,15 @@ export default function App() {
         activeName={patch.name}
         activeBuiltinId={activeBuiltinId}
         storedProfiles={storedProfiles}
+        isModified={isModified}
+        saveMode={saveMode}
         onLoadBuiltin={loadBuiltin}
         onLoadStored={loadStored}
         onNew={handleNew}
         onDuplicate={handleDuplicate}
         onRename={handleRename}
         onSave={handleSave}
+        onRevert={handleRevert}
       />
 
       <CvRack patch={patch} selected={selectedCv} onSelect={setSelectedCv} />
