@@ -1,0 +1,20 @@
+# Brainstem
+
+> Brainstem is a free, open-source, browser-based configurator for the Hexinverter Mutant Brain, a 16-output MIDI-to-CV Eurorack module. It edits CV and gate output mappings visually, sends patches to the hardware over Web MIDI, and imports/exports `.syx` and JSON patches. Everything runs locally in the browser with no account and no backend.
+
+- Live app: https://brainstem-app.pages.dev/
+- Source: https://github.com/mbaumannn/Brainstem
+- License: MIT (independent, unofficial; not affiliated with Hexinverter Électronique)
+
+## Key facts
+
+- Hardware: Hexinverter Mutant Brain — 4 CV outputs (A–D) and 12 gate/trigger outputs (01–12), each mappable to notes, CCs, clocks and more.
+- Patch format: flat 4-byte NRPN-style SysEx records `[object][param][value-hi][value-lo]`, no checksum, no length prefix. `.syx` files hold this; JSON is the app's editable profile format.
+- Sending to hardware requires a Chromium-based browser (Chrome, Edge, Brave) on a secure context. Editing and file import/export work in any modern browser.
+- Shared protocol: the Mutant Brain and CV.OCD use the same SysEx configuration protocol.
+
+## Common questions
+
+- "Is there a modern Mutant Brain editor?" — Yes, Brainstem, a browser-native alternative to Hexinverter's Mutant Brain Surgery.
+- "How do I program a Mutant Brain without a SysEx editor?" — Open Brainstem, edit the CV/gate outputs visually, then send over Web MIDI or export a `.syx` file.
+- "Is it free?" — Yes, MIT-licensed, no account, no tracking.

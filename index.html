@@ -5,17 +5,198 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="Configure, save and send patches to the Hexinverter Mutant Brain." />
+
+    <title>Brainstem — Hexinverter Mutant Brain configurator &amp; .syx patch editor</title>
+    <meta
+      name="description"
+      content="Brainstem is a free, browser-based configurator for the Hexinverter Mutant Brain. Edit CV and gate outputs visually, send patches over Web MIDI, and import or export .syx files — no install, no account."
+    />
+    <meta name="keywords" content="Mutant Brain, Hexinverter Mutant Brain, Mutant Brain configurator, Mutant Brain editor, Mutant Brain Sysex, Mutant Brain Surgery alternative, Web MIDI, CV.OCD, MIDI to CV" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://brainstem-app.pages.dev/" />
+    <meta name="theme-color" content="#131117" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Brainstem" />
+    <meta property="og:title" content="Brainstem — browser configurator for the Hexinverter Mutant Brain" />
+    <meta property="og:description" content="A free, browser-based editor for the Hexinverter Mutant Brain. Build CV and gate patches visually, send them over Web MIDI, and import or export .syx files." />
+    <meta property="og:url" content="https://brainstem-app.pages.dev/" />
+    <meta property="og:image" content="https://brainstem-app.pages.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Brainstem — a browser-based configurator for the Hexinverter Mutant Brain" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Brainstem — browser configurator for the Hexinverter Mutant Brain" />
+    <meta name="twitter:description" content="A free, browser-based editor for the Hexinverter Mutant Brain. Build CV and gate patches visually, send them over Web MIDI, and import or export .syx files." />
+    <meta name="twitter:image" content="https://brainstem-app.pages.dev/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
-    <title>Brainstem</title>
+
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "Brainstem",
+          "alternateName": "Brainstem Mutant Brain configurator",
+          "applicationCategory": "MultimediaApplication",
+          "applicationSubCategory": "Music production utility",
+          "operatingSystem": "Any (web browser)",
+          "url": "https://brainstem-app.pages.dev/",
+          "description": "A free, browser-based configurator for the Hexinverter Mutant Brain 16-output MIDI-to-CV Eurorack module. Edit CV and gate outputs visually, send patches over Web MIDI, and import or export .syx files.",
+          "isAccessibleForFree": true,
+          "license": "https://opensource.org/licenses/MIT",
+          "codeRepository": "https://github.com/mbaumannn/Brainstem",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Visual CV and gate editors mirroring the Mutant Brain front panel",
+            "Send patches to the module over Web MIDI",
+            "Import and export .syx and JSON patches",
+            "Built-in starter profiles for common setups"
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Does Brainstem work in my browser?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Patching works in any modern browser. Sending a patch to the module over Web MIDI needs a Chromium-based browser such as Chrome, Edge or Brave, on a secure (HTTPS) connection. Importing and exporting .syx and JSON patches works everywhere."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Brainstem free?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Brainstem is free and open source under the MIT license, with no account, no ads and no tracking. Everything runs locally in your browser."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Brainstem the same as Mutant Brain Surgery?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Brainstem is an independent alternative to Hexinverter's Mutant Brain Surgery. It runs in any modern browser with no plug-in, flash or Java required, mirrors the module's front panel, and can send patches straight to the hardware over Web MIDI."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I get a patch onto my Mutant Brain?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Connect the Mutant Brain to your computer over USB, then click 'Send to Mutant Brain' in Brainstem and allow MIDI access when the browser asks. You can also export a .syx file and load it with any standard SysEx librarian."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does Brainstem work with the CV.OCD?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Mutant Brain and CV.OCD share the same NRPN-style SysEx configuration protocol. Brainstem targets the Mutant Brain; the same patch concepts carry over to the CV.OCD."
+              }
+            }
+          ]
+        }
+      ]
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <noscript>
+      <p style="max-width: 760px; margin: 24px auto; padding: 0 24px; font-family: system-ui, sans-serif">
+        Brainstem is a browser-based configurator for the Hexinverter Mutant Brain. It needs JavaScript to run.
+        You can find the source and documentation at
+        <a href="https://github.com/mbaumannn/Brainstem">github.com/mbaumannn/Brainstem</a>.
+      </p>
+    </noscript>
+
+    <section class="site-info" aria-label="About Brainstem">
+      <div class="site-info-inner">
+        <h1>Mutant Brain configurator for your browser</h1>
+        <p class="site-lead">
+          Brainstem is a free, open-source web app for configuring the
+          <strong>Hexinverter Mutant Brain</strong>, a 16-output MIDI-to-CV Eurorack module.
+          Edit every CV and gate output visually, send patches straight to the module over
+          Web MIDI, and import or export <code>.syx</code> files — no install, no account,
+          nothing to sign up for. Everything runs locally in your browser.
+        </p>
+
+        <h2>What you can do with Brainstem</h2>
+        <ul>
+          <li><strong>Edit CV and gate outputs visually.</strong> The editor mirrors the module's front panel: four CV outputs (A–D) and twelve gate/trigger outputs (01–12), each one clickable.</li>
+          <li><strong>Map notes, CCs, clocks and triggers.</strong> Set the source, MIDI channel, note range, CC number and clock division for each output.</li>
+          <li><strong>Start from a ready-made profile.</strong> Built-in patches cover polyphonic voices, drum and trigger layouts and other common setups.</li>
+          <li><strong>Send over Web MIDI.</strong> Push a patch to the hardware directly from the browser — no separate MIDI utility required.</li>
+          <li><strong>Import and export.</strong> Read and write <code>.syx</code> files and a JSON profile format, and save profiles to your browser.</li>
+        </ul>
+
+        <h2>A modern alternative to Mutant Brain Surgery</h2>
+        <p>
+          Hexinverter's official <em>Mutant Brain Surgery</em> patch builder was built for an
+          older web. Brainstem is an independent, browser-native alternative: it opens in a
+          normal tab, needs no plug-in, and can talk to the module directly over Web MIDI.
+          If you are looking for a Mutant Brain configurator that works on a current
+          computer, this is it.
+        </p>
+
+        <h2>Frequently asked questions</h2>
+        <h3>Does Brainstem work in my browser?</h3>
+        <p>
+          Patching works in any modern browser. Sending a patch to the module over Web MIDI
+          needs a Chromium-based browser (Chrome, Edge or Brave) on a secure connection.
+          Importing and exporting <code>.syx</code> and JSON patches works everywhere.
+        </p>
+        <h3>Is Brainstem free?</h3>
+        <p>
+          Yes. Brainstem is free and open source under the MIT license, with no account, no
+          ads and no tracking.
+        </p>
+        <h3>Is Brainstem the same as Mutant Brain Surgery?</h3>
+        <p>
+          No — it is an independent alternative. Brainstem runs in any modern browser with no
+          plug-in, flash or Java required, mirrors the module's front panel, and can send
+          patches straight to the hardware over Web MIDI.
+        </p>
+        <h3>How do I get a patch onto my Mutant Brain?</h3>
+        <p>
+          Connect the Mutant Brain over USB, click <strong>Send to Mutant Brain</strong> and
+          allow MIDI access when the browser asks. You can also export a <code>.syx</code> file
+          and load it with any standard SysEx librarian.
+        </p>
+        <h3>Does Brainstem work with the CV.OCD?</h3>
+        <p>
+          The Mutant Brain and CV.OCD share the same NRPN-style SysEx configuration protocol.
+          Brainstem targets the Mutant Brain; the same patch concepts carry over to the CV.OCD.
+        </p>
+
+        <h2>Credits</h2>
+        <p class="site-credit">
+          Brainstem is an independent, unofficial tool. It is <strong>not</strong> affiliated
+          with or endorsed by Hexinverter Électronique. The Mutant Brain, its SysEx protocol
+          and the referenced documentation are the work of Hexinverter and the open-source
+          community. Source code is available on
+          <a href="https://github.com/mbaumannn/Brainstem">GitHub</a> under the MIT license.
+        </p>
+      </div>
+    </section>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

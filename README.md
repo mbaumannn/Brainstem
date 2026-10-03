@@ -50,6 +50,19 @@ Web MIDI and SysEx sending need a secure context (HTTPS, or `localhost` in
 development) and a Chromium-based browser. Profile editing and `.syx` / JSON
 import-export work everywhere.
 
+## Deployment
+
+The app is a static build, deployed to Cloudflare Pages (project
+`brainstem-app`, live at <https://brainstem-app.pages.dev/>).
+
+```bash
+npm run deploy   # build, then publish dist/ to the Pages project
+```
+
+`wrangler` must be authenticated (`npx wrangler login`). Static SEO assets
+(`robots.txt`, `sitemap.xml`, `llms.txt`, `og-image.png`) and security/cache
+headers (`_headers`) live in `public/`.
+
 ## Architecture
 
 ```

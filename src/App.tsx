@@ -118,10 +118,10 @@ export default function App() {
     <>
       <header className="app-header">
         <div className="wordmark">
-          <h1>
+          <h2>
             <ChannelRing tone="var(--accent)" active size={22} />
             <span>Brainstem</span>
-          </h1>
+          </h2>
           <span className="wordmark-tagline">a Mutant Brain utility</span>
         </div>
         <div className="header-actions">
